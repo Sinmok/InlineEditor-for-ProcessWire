@@ -1,0 +1,103 @@
+<?php
+/**
+ * Copyright Simon Fernandes
+ * @author: Simon Fernandes
+ * Date: 10/05/2013
+ * Time: 10:20
+ */
+
+class InlineEditorProcess extends Process {
+
+    /**
+     * Return information about this module (required)
+     */
+
+    public static $module_name = "Inline_Editor_for_PW";
+
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'Inline Editor Process',
+            'summary' => 'Processor for the inline editor',
+            'version' => 001,
+            'author' => 'Simon Fernandes',
+            'permission' => 'page-edit',
+        );
+    }
+
+    /**
+     * Get the input, update and save the page.
+     * Each AJAX call to this method will update a single field
+     */
+    public function ___execute() {
+
+        //Messages to send back to the browser
+        $status = "ok";
+        $exception = "";
+
+        $page_to_update = $this->pages->get($this->input->post("page_id"));
+
+
+        //Does this page exist?
+        if(!$page_to_update->id){
+            $status = "failed";
+            $exception = "That page does not exist!";
+        }
+        //It does exist.
+        else{
+            $field_name = $this->input->post("field_name");
+
+            $page_to_update->$field_name = $this->input->post("data");
+
+            //Do they have permission to save the page?
+            if($page_to_update->editable()){
+                $page_to_update->save();
+            }
+            //They do not have permission.
+            else{
+                $status = "failed";
+                $exception = "You do not have permission to edit this page";
+            }
+        }
+
+        return json_encode(array(
+            "status" => $status,
+            "exception" => $exception
+        ));
+
+    }
+
+
+    /**
+     * Install a new admin page for this process.
+     */
+    public function ___install() {
+
+        $page = new Page();
+        $page->template = 'admin';
+        $page->name = self::$module_name;
+
+        $page->parent = $this->pages->get($this->config->adminRootPageID)->child('name=page');
+        $page->process = $this;
+
+        $page->title = self::$module_name;
+
+        // save the page
+        $page->save();
+
+        // tell the user we created this page
+        $this->message("Inline Editor Admin page has been created");
+
+    }
+
+
+    /**
+     * Remove the admin page that was created during install.
+     */
+    public function ___uninstall() {
+
+        $to_delete = $this->pages->get("template=admin, name=". self::$module_name);
+        $to_delete->delete();
+
+    }
+
+}

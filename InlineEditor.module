@@ -1,0 +1,229 @@
+<?php
+/**
+ * Copyright Simon Fernandes
+ * @author: Simon Fernandes
+ * Date: 10/05/2013
+ * Time: 10:20
+ */
+class InlineEditor extends WireData implements Module {
+
+
+    protected $user; //Reference to the logged in user
+    protected $admin_url; // Reference to the admin page that handles the AJAX requests
+
+
+    protected $config = array(
+        "background-color" => "#181616",
+        "color" => "#fff",
+        "link-color" => "#83C1FF",
+        "link-color-hover" => "red",
+        "admin" => "" // Gets initialised in ready()
+    );
+
+    /**
+     * Returns an array of information about this module
+     * @return array
+     */
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'An inline editor for front-end content management',
+            'summary' => 'This plugin allows you to edit content inline in the front end',
+            'version' => 001,
+            'author' => 'Simon Fernandes (sinmok@gmail.com)',
+            'permission' => 'page-edit',
+            'autoload' => true,
+            'installs' => array("InlineEditorProcess")
+        );
+    }
+
+    /**
+     * Adds the hooks. In particular the Page::render hook.
+     */
+    public function init(){
+
+        // add a hook after each page is rendered and modify the output. This will cause the editor bar to be
+        // injected to the bottom of the page
+        $this->addHookAfter('Page::render', $this, 'setupDiv');
+
+    }
+
+    /**
+     * Setup some information
+     */
+    public function ready(){
+
+        $this->user = wire("user");
+
+        $admin = $this->pages->get("template=admin, name=Inline_Editor_for_PW, limit=1");
+
+        $this->admin_url = $admin->httpUrl;
+        $this->config["admin"] = $this->user->name;
+    }
+
+    /**
+     * @param bool $jquery
+     * @return string An output
+     */
+    public function scripts($jquery = false){
+
+        $page = wire("page");
+
+        $output = "";
+
+        //Does the user have permission?
+        if($page->editable()){
+
+            //Optionally add jQuery if the user needs it
+            if($jquery){
+                $output .= "\n \t <script src='//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js'></script>";
+            }
+
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules ."InlineEditor/js/ckeditor/ckeditor.js'></script>";
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules ."InlineEditor/js/inlineeditor.js'></script>";
+
+        }
+
+        return $output;
+
+    }
+
+    /**
+     * This method injects the editor into the rendered page just before the HTML is sent to the browser
+     * Called once the page is rendered automatically by the PW core.
+     * Do NOT call this method yourself!
+     * @param $event
+     */
+    public function setupDiv($event){
+
+        $page = $event->object;
+
+        // This should only effect public pages.
+        if($page->template == 'admin'){
+            return;
+        }
+
+        //Does the user have permission to edit the page?
+        if($page->editable()){
+
+            //Load the template
+            $content = $this->getInjectableEditor();
+
+            //Append the editor div to the bottom
+            $event->return = str_replace("</body>", $content."</body>", $event->return);
+        }
+
+    }
+
+
+    /**
+     * Sets up a HTML element ready to be edited
+     * The element that this function is called in should be a block element, otherwise CKEditor will not
+     * render the inline editor and you will lose some functionality.
+     * @usage <div $inline->setupField("a_field_name") > <?=$page->a_field_name?> </div>
+     * @param string $field_name The name of the field that we want to edit
+     * @param Page $page_ref
+     * @return string
+     */
+    public function setupField($field_name = "",Page $page_ref = null){
+
+        //Do we use the current page, or the page reference passed to us?
+        if(is_null($page_ref)){
+            $page = wire("page");
+        }
+        else{
+            $page = $page_ref;
+        }
+
+        //Setup the string that will be injected into the HTML element
+        $return_string = "contenteditable='true' data-pw-inline='true' data-page-id='{$page->id}' data-field-name='{$field_name}'";
+
+        //Is the user allowed to edit this page in the first place?
+        if($this->page->editable()){
+            return $return_string;
+        }
+        else{
+            //If not, return nothing
+            return "";
+        }
+
+    }
+
+    /**
+     * Called after the page is rendered by setupDiv()
+     * This method provides the CSS and HTML contents that will be injected just before the last <body> tag
+     * @return string Injectable HTML and CSS string
+     */
+    protected function getInjectableEditor(){
+
+        $config = wire("config");
+
+        $logout_url = $this->pages->get($config->adminRootPageID)->httpUrl."login/logout";
+
+        $content = <<<CONTENT
+
+        <!--
+        Injected editing bar from Inline Editor
+        © 2013 Simon Fernandes (sinmok[at]gmail.com)
+        -->
+
+        <style type="text/css">
+            #inline-editor-pw-module{
+                bottom: 0px;
+                height: 20px;
+                background-color: {$this->config['background-color']};
+                color: {$this->config['color']};
+                position: fixed;
+                width: 100%;
+                padding: 20px;
+
+            }
+
+            #inline-editor-pw-module-close{
+                float: right;
+                margin-right: 40px;
+                color: {$this->config['link-color']};
+                text-decoration: none;
+            }
+
+            #inline-editor-pw-module-close:hover{
+                color: {$this->config['link-colot-hover']};
+            }
+
+            .inline-editor-pw-module-success{
+                color: green;
+            }
+
+            .inline-editor-pw-module-failure{
+                color: red;
+            }
+
+
+            #inline-editor-pw-module-url{
+                display: none;
+            }
+
+            #inline-editor-pw-module-status{
+                margin-left: 25%;
+            }
+        </style>
+
+        <div id="inline-editor-pw-module">
+            Inline Editor v 0.0.1 Logged in as: {$this->config['admin']}
+
+            <span id="inline-editor-pw-module-status"></span>
+
+
+            <a href="{$logout_url}" id="inline-editor-pw-module-close">
+                Close / Logout
+            </a>
+            <span id='inline-editor-pw-module-url'>{$this->admin_url}</span></div>
+        </div>
+
+CONTENT;
+
+           return $content;
+    }
+
+
+
+}
