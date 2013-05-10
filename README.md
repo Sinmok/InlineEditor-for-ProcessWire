@@ -44,15 +44,28 @@ Installation
 1.  Grab a copy of the Inline Editor files.
 
 2.  In your ProcessWire installation, navigate to ```site/modules``` and place the
-    contents of the module inside.
+    contents of the module inside. Rename the folder to ```InlineEditor``` so that the site structure looks like this
+    ```
+    root
+        site
+            modules
+                InlineEditor
+                    js
+                        ckeditor
+                        inlineeditor.js
+                    InlineEditor.module
+                    InlineEditorProcess.module
+```
 
-3.  Open the ProcessWire admin panel. Select "Modules" and then select Check for
+3. Go back and make absolutely sure you have renamed the module folder to InlineEditor as shown above!
+
+4.  Open the ProcessWire admin panel. Select "Modules" and then select Check for
     new Modules.
 
-4.  Install the ```'InlineEditor'``` module. It should automatically install the
+5.  Install the ```'InlineEditor'``` module. It should automatically install the
     ```InlineEditorProcess``` module too
 
-5.  That's it - you're now ready to set up your template
+6.  That's it - you're now ready to set up your template
 
 
 Limitations
