@@ -3,6 +3,10 @@ $(document).ready(function(){
     //Find all editable instances
     var editables = $("[data-pw-inline='true']");
 
+    //Attach a red border to indicate that an area is editable
+    editables.css("border","1px dashed red");
+
+    //Get the url that we should post the AJAX requests to
     var post_url = $("#inline-editor-pw-module-url").text();
 
     //Setup the functions for the bottom bar
@@ -20,7 +24,6 @@ $(document).ready(function(){
 
         return false;
     });
-
 
     /**
      * Save the page when the CKEditor loses focus.
@@ -49,17 +52,13 @@ $(document).ready(function(){
                 status.text("Section "+data.field_name+" save failure!");
             }
 
-            status.fadeIn("fast");
+            status.css("opacity",1);
 
             setTimeout(function() {
-                status.fadeOut('slow');
+                status.animate({"opacity": 0});
             }, 2000);
 
         },"json");
     });
-
-
-
-
 
 });
