@@ -18,7 +18,7 @@ class InlineEditorProcess extends Process {
         return array(
             'title' => 'Inline Editor Process',
             'summary' => 'Processor for the inline editor',
-            'version' => 001,
+            'version' => 002,
             'author' => 'Simon Fernandes',
             'permission' => 'page-edit',
         );
@@ -33,6 +33,10 @@ class InlineEditorProcess extends Process {
         //Messages to send back to the browser
         $status = "ok";
         $exception = "";
+
+        if($this->config->ajax != true){
+            throw new WireException("Request must be via AJAX");
+        }
 
         $page_to_update = $this->pages->get($this->input->post("page_id"));
 
