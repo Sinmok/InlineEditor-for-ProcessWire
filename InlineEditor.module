@@ -2,8 +2,8 @@
 /**
  * Copyright Simon Fernandes
  * @author: Simon Fernandes
- * Date: 10/05/2013
- * Time: 10:20
+ * Date: 13/05/2013
+ * Time: 12:39
  */
 class InlineEditor extends WireData implements Module {
 
@@ -79,7 +79,7 @@ class InlineEditor extends WireData implements Module {
             }
 
             $output .= "\n \t <script src='". wire('config')->urls->siteModules ."InlineEditor/js/ckeditor/ckeditor.js'></script>";
-            $output .= "\n \t <script src='". wire('config')->urls->siteModules ."InlineEditor/js/inlineeditor.js'></script>";
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules ."InlineEditor/js/inlineeditor.js?=1'></script>";
 
         }
 
@@ -175,18 +175,18 @@ class InlineEditor extends WireData implements Module {
                 position: fixed;
                 width: 100%;
                 padding: 20px;
+                overflow: auto;
 
             }
 
             #inline-editor-pw-module-close{
                 float: right;
-                margin-right: 40px;
                 color: {$this->config['link-color']};
                 text-decoration: none;
             }
 
             #inline-editor-pw-module-close:hover{
-                color: {$this->config['link-colot-hover']};
+                color: {$this->config['link-color-hover']};
             }
 
             .inline-editor-pw-module-success{
@@ -197,33 +197,52 @@ class InlineEditor extends WireData implements Module {
                 color: red;
             }
 
-
             #inline-editor-pw-module-url{
                 display: none;
             }
 
-            #inline-editor-pw-module-status{
-                margin-left: 25%;
+            .inline-editor-pw-module-33{
+                width: 33%;
+                float: left;
+                overflow: auto;
             }
+
+            .inline-editor-pw-module-right{
+                text-align: right;
+            }
+
+            .inline-editor-pw-module-center{
+                text-align: center;
+            }
+
         </style>
 
-        <div id="inline-editor-pw-module">
-            Inline Editor v 0.0.1 Logged in as: {$this->config['admin']}
+        <div id="inline-editor-pw-module" style="float: left">
 
-            <span id="inline-editor-pw-module-status"></span>
+            <div class="inline-editor-pw-module-33">
+                    Inline Editor v 0.0.2 Logged in as: {$this->config['admin']}
+            </div>
+
+            <div class="inline-editor-pw-module-33 inline-editor-pw-module-center">
+                <div id="inline-editor-pw-module-status">
+                    &nbsp; Click on a red area to edit. Click off the area to save.
+                </div>
+            </div>
+
+            <div class="inline-editor-pw-module-33 inline-editor-pw-module-right">
+                <a href="{$logout_url}" id="inline-editor-pw-module-close">
+                    Close / Logout
+                </a>
+                <span id='inline-editor-pw-module-url'>{$this->admin_url}</span>
+            </div>
 
 
-            <a href="{$logout_url}" id="inline-editor-pw-module-close">
-                Close / Logout
-            </a>
-            <span id='inline-editor-pw-module-url'>{$this->admin_url}</span></div>
         </div>
 
 CONTENT;
 
            return $content;
     }
-
 
 
 }
