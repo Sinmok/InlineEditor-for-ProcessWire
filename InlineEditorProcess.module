@@ -18,7 +18,7 @@ class InlineEditorProcess extends Process {
         return array(
             'title' => 'Inline Editor Process',
             'summary' => 'Processor for the inline editor',
-            'version' => 002,
+            'version' => 003,
             'author' => 'Simon Fernandes',
             'permission' => 'page-edit',
         );
