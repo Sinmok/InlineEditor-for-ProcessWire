@@ -71,8 +71,7 @@ Installation
 Limitations
 -----------
 
--   Currently only works on **basic textual fields** only. (TextArea, Text
-    fields)
+-   Does not work on Image/Non textual fields fields.
 
 Module usage
 ------------
