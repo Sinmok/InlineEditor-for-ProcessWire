@@ -30,10 +30,8 @@ class InlineEditorProcess extends Process {
      */
     public function ___execute() {
 
-        //Messages to send back to the browser
-        $status = "ok";
-        $exception = "";
 
+        //Is AJAX request?
         if($this->config->ajax != true){
             throw new WireException("Request must be via AJAX");
         }
@@ -43,30 +41,75 @@ class InlineEditorProcess extends Process {
 
         //Does this page exist?
         if(!$page_to_update->id){
-            $status = "failed";
-            $exception = "That page does not exist!";
+            $result = $this->formatResult("failed","The requested page does not exist!");
         }
         //It does exist.
         else{
-            $field_name = $this->input->post("field_name");
-
-            $page_to_update->$field_name = $this->input->post("data");
 
             //Do they have permission to save the page?
             if($page_to_update->editable()){
-                $page_to_update->save();
+
+                //which method handles the request?
+                //Check the type of field this is. If it's just text, great.
+                //If not, we need to handle the file upload
+                switch($this->input->post("field_type")){
+                    case "text":
+                        $result = $this->handleText($page_to_update);
+                        break;
+                    case "image":
+                        $result = $this->handleImage($page_to_update);
+                        break;
+                    default:
+                        $result = $this->handleText($page_to_update);
+                        break;
+                }
+
             }
             //They do not have permission.
             else{
-                $status = "failed";
-                $exception = "You do not have permission to edit this page";
+                $result = $this->formatResult("failed","Permission denied");
             }
         }
 
-        return json_encode(array(
+        return $result;
+
+    }
+
+    private function formatResult($status,$exception){
+
+        $result = array(
             "status" => $status,
             "exception" => $exception
-        ));
+        );
+
+        return json_encode($result);
+
+    }
+
+    /**
+     * @param Page $page The page to be edited
+     * @return string JSON encoded string of the result
+     */
+    protected function handleText(Page $page){
+
+        //Get the field name
+        $field_name = $this->input->post("field_name");
+        //Get the data for this field
+        $page->$field_name = $this->input->post("data");
+        //Save the page
+        $page->save();
+
+        //Return the result
+        return $this->formatResult("ok","Field '{$field_name}' on page '{$page->name}' successfully updated");
+
+    }
+
+    /**
+     * TODO - Handle image uploads - but how?
+     * Handle an upload of images
+     * @param Page $page
+     */
+    protected function handleImage(Page &$page){
 
     }
 
