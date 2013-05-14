@@ -48,7 +48,7 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
         return array(
             'title' => 'An inline editor for front-end content management',
             'summary' => 'This plugin allows you to edit content inline in the front end',
-            'version' => 002,
+            'version' => 003,
             'author' => 'Simon Fernandes (sinmok@gmail.com)',
             'permission' => 'page-edit',
             'autoload' => true,
