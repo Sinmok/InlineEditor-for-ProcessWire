@@ -332,7 +332,7 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
         <div id="inline-editor-pw-module" style="float: left">
 
             <div class="inline-editor-pw-module-33">
-                    Inline Editor v 0.0.2 Logged in as: {$this->admin}
+                    Inline Editor v 0.0.3 Logged in as: {$this->admin}
             </div>
 
             <div class="inline-editor-pw-module-33 inline-editor-pw-module-center">
