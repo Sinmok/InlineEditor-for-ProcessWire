@@ -160,7 +160,7 @@ For example:
 ```php
 <div id="foo" <?=$inline->setupField("some_text_field")?> >
 
-    <?$page->some_text_field?>
+    <?=$page->some_text_field?>
 
 </div>
 ```
@@ -175,7 +175,7 @@ For example:
 
     <div <?=$inline->setupField("some_text_field")?> >
 
-        <?$page->some_text_field?>
+        <?=$page->some_text_field?>
 
     </div>
 
@@ -197,7 +197,7 @@ Use your discretion as to what works for your site.
 
     <div <?=$inline->setupField("some_text_field")?> >
 
-    $page-some_text_field?>
+    <?=$page-some_text_field?>
 
     </div>
 
