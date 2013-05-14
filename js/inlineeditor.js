@@ -58,12 +58,12 @@ $(document).ready(function(){
             if(result.status == "ok"){
                 status.removeClass();
                 status.addClass("inline-editor-pw-module-success");
-                status.text("Section "+data.field_name+" successfully saved");
+                status.text(result.exception);
             }
             else{
                 status.removeClass();
                 status.addClass("inline-editor-pw-module-failed");
-                status.text("Section "+data.field_name+" save failure!");
+                status.text(result.exception);
             }
 
             status.css("opacity",1);
