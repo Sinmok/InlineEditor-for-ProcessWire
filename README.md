@@ -74,9 +74,6 @@ Limitations
 -   Currently only works on **basic textual fields** only. (TextArea, Text
     fields)
 
--   Repeaters do not currently work.
-
-
 Module usage
 ------------
 
@@ -123,7 +120,6 @@ Inbetween your ```<head></head>``` tags add:
 Make sure that this snippet is called *AFTER* your jQuery call.
 
 
-
 ### Specify the areas that should be made editable
 
 If, for example you have an area that is being output from the ```$page``` API,
@@ -140,7 +136,6 @@ Example 1:
 
 </div>
 ```
-
 
 
 **becomes**
