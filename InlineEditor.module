@@ -5,20 +5,40 @@
  * Date: 13/05/2013
  * Time: 12:39
  */
-class InlineEditor extends WireData implements Module {
+class InlineEditor extends WireData implements Module, ConfigurableModule {
 
 
     protected $user; //Reference to the logged in user
     protected $admin_url; // Reference to the admin page that handles the AJAX requests
 
+    //Configurable options
 
-    protected $config = array(
-        "background-color" => "#181616",
-        "color" => "#fff",
-        "link-color" => "#83C1FF",
-        "link-color-hover" => "red",
-        "admin" => "" // Gets initialised in ready()
+    public $background_color;
+    public $text_color;
+    public $link_color;
+    public $link_color_hover;
+    public $admin;
+    public $editable_color;
+
+
+
+    protected static $config = array(
+        "background_color" => "#181616",
+        "text_color" => "#fff",
+        "link_color" => "#83C1FF",
+        "link_color_hover" => "#ff0000",
+        "editable_color" => "#ff0000"
     );
+
+
+    public function __construct(){
+        $this->background_color = self::$config['background_color'];
+        $this->text_color = self::$config['text_color'];
+        $this->link_color = self::$config['link_color'];
+        $this->link_color_hover = self::$config['link_color_hover'];
+        $this->editable_color = self::$config['editable_color'];
+
+    }
 
     /**
      * Returns an array of information about this module
@@ -28,12 +48,93 @@ class InlineEditor extends WireData implements Module {
         return array(
             'title' => 'An inline editor for front-end content management',
             'summary' => 'This plugin allows you to edit content inline in the front end',
-            'version' => 001,
+            'version' => 002,
             'author' => 'Simon Fernandes (sinmok@gmail.com)',
             'permission' => 'page-edit',
             'autoload' => true,
             'installs' => array("InlineEditorProcess")
         );
+    }
+
+    /**
+     * Used to configure the look and feel of the editor bar
+     *
+     * @param array $data Array of config values indexed by field name
+     * @return InputfieldsWrapper
+     *
+     */
+    public static function getModuleConfigInputfields(array $data)
+    {
+
+        $inputfields = new InputfieldWrapper();
+
+        //Background colour
+        $field = wire('modules')->get('InputfieldText');
+        $field->name = 'background_color';
+        $field->label = "Editor bar background colour";
+        $field->value = self::$config['background_color'];
+        $field->setAttribute("type","color");
+
+        if(isset($data['background_color'])){
+            $field->value = $data['background_color'];
+        }
+        $inputfields->add($field);
+
+        //text colour
+        $field = wire('modules')->get('InputfieldText');
+        $field->name = 'text_color';
+        $field->label = "Editor bar text colour";
+        $field->value = self::$config['text_color'];
+        $field->setAttribute("type","color");
+
+
+
+        if(isset($data['text_color'])){
+            $field->value = $data['text_color'];
+        }
+        $inputfields->add($field);
+
+        //link colour
+        $field = wire('modules')->get('InputfieldText');
+        $field->name = 'link_color';
+        $field->label = "Editor bar link colour";
+        $field->value = self::$config['link_color'];
+        $field->setAttribute("type","color");
+
+
+
+        if(isset($data['link_color'])){
+            $field->value = $data['link_color'];
+        }
+        $inputfields->add($field);
+
+        //link colour hover
+        $field = wire('modules')->get('InputfieldText');
+        $field->name = 'link_color_hover';
+        $field->label = "Editor bar link hover colour";
+        $field->value = self::$config['link_color_hover'];
+        $field->setAttribute("type","color");
+
+
+        if(isset($data['link_color_hover'])){
+            $field->value = $data['link_color_hover'];
+        }
+        $inputfields->add($field);
+
+        //Editable border colour
+        $field = wire('modules')->get('InputfieldText');
+        $field->name = 'editable_color';
+        $field->label = "Editable area border colour";
+        $field->value = self::$config['editable_color'];
+        $field->setAttribute("type","color");
+
+
+        if(isset($data['editable_color'])){
+            $field->value = $data['editable_color'];
+        }
+        $inputfields->add($field);
+
+        return $inputfields;
     }
 
     /**
@@ -57,7 +158,7 @@ class InlineEditor extends WireData implements Module {
         $admin = $this->pages->get("template=admin, name=Inline_Editor_for_PW, limit=1");
 
         $this->admin_url = $admin->httpUrl;
-        $this->config["admin"] = $this->user->name;
+        $this->admin = $this->user->name;
     }
 
     /**
@@ -167,26 +268,35 @@ class InlineEditor extends WireData implements Module {
         -->
 
         <style type="text/css">
+
+            .inline-editor-pw-module-editable{
+                border: 1px dashed {$this->editable_color};
+            }
+
             #inline-editor-pw-module{
                 bottom: 0px;
-                height: 20px;
-                background-color: {$this->config['background-color']};
-                color: {$this->config['color']};
+                height: 25px;
+                background-color: {$this->background_color};
+                color: {$this->text_color};
                 position: fixed;
                 width: 100%;
-                padding: 20px;
+                padding: 15px;
                 overflow: auto;
 
             }
 
             #inline-editor-pw-module-close{
                 float: right;
-                color: {$this->config['link-color']};
+                color: {$this->link_color};
                 text-decoration: none;
             }
 
             #inline-editor-pw-module-close:hover{
-                color: {$this->config['link-color-hover']};
+                color: {$this->link_color_hover};
+            }
+
+            #inline-editor-pw-module-status{
+
             }
 
             .inline-editor-pw-module-success{
@@ -205,6 +315,8 @@ class InlineEditor extends WireData implements Module {
                 width: 33%;
                 float: left;
                 overflow: auto;
+                padding-top: 5px;
+                padding-bottom: 5px;
             }
 
             .inline-editor-pw-module-right{
@@ -220,12 +332,12 @@ class InlineEditor extends WireData implements Module {
         <div id="inline-editor-pw-module" style="float: left">
 
             <div class="inline-editor-pw-module-33">
-                    Inline Editor v 0.0.2 Logged in as: {$this->config['admin']}
+                    Inline Editor v 0.0.2 Logged in as: {$this->admin}
             </div>
 
             <div class="inline-editor-pw-module-33 inline-editor-pw-module-center">
                 <div id="inline-editor-pw-module-status">
-                    &nbsp; Click on a red area to edit. Click off the area to save.
+                    &nbsp; Click on a <span style="border:1px dashed{$this->editable_color}">dashed area</span> to edit. Click off the area to save.
                 </div>
             </div>
 
@@ -243,6 +355,7 @@ CONTENT;
 
            return $content;
     }
+
 
 
 }
