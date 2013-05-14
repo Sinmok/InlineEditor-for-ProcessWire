@@ -4,10 +4,23 @@ $(document).ready(function(){
     var editables = $("[data-pw-inline='true']");
 
     //Attach a red border to indicate that an area is editable
-    editables.css("border","1px dashed red");
+    editables.addClass("inline-editor-pw-module-editable");
+
+    var edit = $(document.createElement("img"));
+    //Add event handler to it so that clicking the image will make the editable..editable!
+
+    edit.attr("src","./site/modules/InlineEditor/images/pw-inlineeditor-edit.png");
+    edit.attr("title","This area is editable. Click to edit, click off to save.");
+
+    //Set up a div that tells the user what parts are editable
+    var div = $(document.createElement("div"));
+    div.append(edit);
+    div.append("<em> Editable</em>");
+    //editables.before(div);
 
     //Get the url that we should post the AJAX requests to
     var post_url = $("#inline-editor-pw-module-url").text();
+
 
     //Setup the functions for the bottom bar
 
@@ -24,6 +37,7 @@ $(document).ready(function(){
 
         return false;
     });
+
 
     /**
      * Save the page when the CKEditor loses focus.
@@ -60,5 +74,6 @@ $(document).ready(function(){
 
         },"json");
     });
+
 
 });
