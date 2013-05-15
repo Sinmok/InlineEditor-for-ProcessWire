@@ -27,7 +27,7 @@ editing features.
 Requirements
 ------------
 
-1.  The latest version of ProcessWire, currently 2.1.3. The same PHP
+1.  The latest version of ProcessWire, currently 2.3.0. The same PHP
     requirements as ProcessWire apply
 
 2.  A modern browser that supports the HTML5 `contenteditable` attribute and has
