@@ -1,25 +1,25 @@
 $(document).ready(function(){
 
     //Find all editable instances
-    var editables = $("[data-pw-inline='true']");
-
-    //Attach a red border to indicate that an area is editable
-    editables.addClass("inline-editor-pw-module-editable");
-
-    var edit = $(document.createElement("img"));
-    //Add event handler to it so that clicking the image will make the editable..editable!
-
-    edit.attr("src","./site/modules/InlineEditor/images/pw-inlineeditor-edit.png");
-    edit.attr("title","This area is editable. Click to edit, click off to save.");
-
-    //Set up a div that tells the user what parts are editable
-    var div = $(document.createElement("div"));
-    div.append(edit);
-    div.append("<em> Editable</em>");
-    //editables.before(div);
+    var editables = $("[data-pw-inline='true']").not('[data-field-type="Pageimage"]');
+    var pageimages = $('[data-field-type="Pageimage"]');
 
     //Get the url that we should post the AJAX requests to
     var post_url = $("#inline-editor-pw-module-url").text();
+
+    var status = $('#inline-editor-pw-module-status');
+
+    var status_text_original = status.html();
+
+
+    //Attach a red border to indicate that an area is editable
+    editables.addClass("inline-editor-pw-module-editable");
+    editables.css("box-sizing","border-box");
+
+    pageimages.addClass("inline-editor-pw-module-editable");
+    pageimages.css("box-sizing","border-box");
+
+
 
 
     //Setup the functions for the bottom bar
@@ -38,6 +38,55 @@ $(document).ready(function(){
         return false;
     });
 
+    pageimages.on("mouseover",function(){
+        $(this).animate({
+            opacity: 0.7
+        });
+    });
+
+    pageimages.on("mouseleave",function(){
+        $(this).animate({
+            opacity: 1
+        });
+    });
+
+
+    //Detect the image field type and respond to the type
+    pageimages.on("click",function(){
+        var current_element = $(this);
+
+        //Are we dealing with an image?
+        if(current_element.data("field-type") == "Pageimage"){
+            //current_element.attr("src",prompt("URL",""));
+
+            //Load the image upload modal
+            try{
+                current_element.dropzone({
+                    url: post_url,
+                    sending: function(file,xhr,formData){
+
+                        formData.append("page_id",current_element.data("page-id"));
+                        formData.append("field_name",current_element.data("field-name"));
+                        formData.append("data","");
+                        formData.append("field_type","Pageimage");
+                    },
+                    success: function(data,success){
+                        //YES
+                        success = JSON.parse(success);
+                        console.log(success);
+                        current_element.attr("src",success.location);
+                    }
+                });
+            }
+            catch(err){
+            //Do nothing yet
+
+            }
+
+
+        }
+    });
+
 
     /**
      * Save the page when the CKEditor loses focus.
@@ -46,15 +95,15 @@ $(document).ready(function(){
     editables.on('blur',function(){
         var current_element = $(this);
 
-
         var data = {
             page_id : current_element.data("page-id"),
             field_name: current_element.data("field-name"),
             data: current_element.html()
         };
 
+
         $.post(post_url,data,function(result){
-            var status = $('#inline-editor-pw-module-status');
+
             if(result.status == "ok"){
                 status.removeClass();
                 status.addClass("inline-editor-pw-module-success");
@@ -69,11 +118,22 @@ $(document).ready(function(){
             status.css("opacity",1);
 
             setTimeout(function() {
-                status.animate({"opacity": 0});
+                status.animate(
+                    {
+                        "opacity": 0
+                    },
+                    "slow",defaultMessage
+                );
             }, 2000);
 
         },"json");
     });
+
+    function defaultMessage(){
+        status.removeClass();
+        status.html(status_text_original);
+        status.animate({opacity: 1});
+    }
 
 
 });
