@@ -135,6 +135,5 @@ $(document).ready(function(){
         status.animate({opacity: 1});
     }
 
-
-
 });
+
