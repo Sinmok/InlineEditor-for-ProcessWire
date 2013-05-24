@@ -1,0 +1,381 @@
+<?php
+/**
+ * Copyright Simon Fernandes
+ * @author: Simon Fernandes
+ * Date: 13/05/2013
+ * Time: 12:39
+ */
+class InlineEditor extends WireData implements Module, ConfigurableModule {
+
+
+    protected $user; //Reference to the logged in user
+    protected $admin_url; // Reference to the admin page that handles the AJAX requests
+
+    //Configurable options
+
+    public $background_color;
+    public $text_color;
+    public $link_color;
+    public $link_color_hover;
+    public $admin;
+    public $editable_color;
+
+    protected static $version = "004";
+
+
+
+    protected static $config = array(
+        "background_color" => "#181616",
+        "text_color" => "#fff",
+        "link_color" => "#83C1FF",
+        "link_color_hover" => "#ff0000",
+        "editable_color" => "#ff0000"
+    );
+
+
+    public function __construct(){
+        $this->background_color = self::$config['background_color'];
+        $this->text_color = self::$config['text_color'];
+        $this->link_color = self::$config['link_color'];
+        $this->link_color_hover = self::$config['link_color_hover'];
+        $this->editable_color = self::$config['editable_color'];
+
+    }
+
+    /**
+     * Returns an array of information about this module
+     * @return array
+     */
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'An inline editor for front-end content management',
+            'summary' => 'This plugin allows you to edit content inline in the front end',
+            'version' => self::$version,
+            'author' => 'Simon Fernandes (sinmok@gmail.com)',
+            'permission' => 'page-edit',
+            'autoload' => true,
+            'installs' => array("InlineEditorProcess")
+        );
+    }
+
+    /**
+     * Used to configure the look and feel of the editor bar
+     *
+     * @param array $data Array of config values indexed by field name
+     * @return InputfieldsWrapper
+     *
+     */
+    public static function getModuleConfigInputfields(array $data)
+    {
+
+        $inputfields = new InputfieldWrapper();
+
+        //Background colour
+        $field = wire('modules')->get('InputfieldText');
+        $field->name = 'background_color';
+        $field->label = "Editor bar background colour";
+        $field->value = self::$config['background_color'];
+        $field->setAttribute("type","color");
+
+        if(isset($data['background_color'])){
+            $field->value = $data['background_color'];
+        }
+        $inputfields->add($field);
+
+        //text colour
+        $field = wire('modules')->get('InputfieldText');
+        $field->name = 'text_color';
+        $field->label = "Editor bar text colour";
+        $field->value = self::$config['text_color'];
+        $field->setAttribute("type","color");
+
+
+
+        if(isset($data['text_color'])){
+            $field->value = $data['text_color'];
+        }
+        $inputfields->add($field);
+
+        //link colour
+        $field = wire('modules')->get('InputfieldText');
+        $field->name = 'link_color';
+        $field->label = "Editor bar link colour";
+        $field->value = self::$config['link_color'];
+        $field->setAttribute("type","color");
+
+
+
+        if(isset($data['link_color'])){
+            $field->value = $data['link_color'];
+        }
+        $inputfields->add($field);
+
+        //link colour hover
+        $field = wire('modules')->get('InputfieldText');
+        $field->name = 'link_color_hover';
+        $field->label = "Editor bar link hover colour";
+        $field->value = self::$config['link_color_hover'];
+        $field->setAttribute("type","color");
+
+
+        if(isset($data['link_color_hover'])){
+            $field->value = $data['link_color_hover'];
+        }
+        $inputfields->add($field);
+
+        //Editable border colour
+        $field = wire('modules')->get('InputfieldText');
+        $field->name = 'editable_color';
+        $field->label = "Editable area border colour";
+        $field->value = self::$config['editable_color'];
+        $field->setAttribute("type","color");
+
+
+        if(isset($data['editable_color'])){
+            $field->value = $data['editable_color'];
+        }
+        $inputfields->add($field);
+
+        return $inputfields;
+    }
+
+    /**
+     * Adds the hooks. In particular the Page::render hook.
+     */
+    public function init(){
+
+        // add a hook after each page is rendered and modify the output. This will cause the editor bar to be
+        // injected to the bottom of the page
+        $this->addHookAfter('Page::render', $this, 'setupDiv');
+
+    }
+
+    /**
+     * Setup some information
+     */
+    public function ready(){
+
+        $this->user = wire("user");
+
+        $admin = $this->pages->get("template=admin, name=Inline_Editor_for_PW, limit=1");
+
+        $this->admin_url = $admin->httpUrl;
+        $this->admin = $this->user->name;
+    }
+
+    /**
+     * @param bool $jquery
+     * @return string An output
+     */
+    public function scripts($jquery = false){
+
+        $page = wire("page");
+
+        //Get name of this folder
+        $folder = explode("/",__DIR__);
+        $folder_name = array_pop($folder);
+
+        $output = "";
+
+        //Does the user have permission?
+        if($page->editable()){
+
+            //Optionally add jQuery if the user needs it
+            if($jquery){
+                $output .= "\n \t <script src='//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js'></script>";
+            }
+
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules .$folder_name."/js/dropzone/dropzone.min.js'/></script>";
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules .$folder_name."/js/ckeditor/ckeditor.js'></script>";
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules .$folder_name."/js/inlineeditor.js'></script>";
+
+
+        }
+
+        return $output;
+
+    }
+
+    /**
+     * This method injects the editor into the rendered page just before the HTML is sent to the browser
+     * Called once the page is rendered automatically by the PW core.
+     * Do NOT call this method yourself!
+     * @param $event
+     */
+    public function setupDiv($event){
+
+        $page = $event->object;
+
+        // This should only effect public pages.
+        if($page->template == 'admin'){
+            return;
+        }
+
+        //Does the user have permission to edit the page?
+        if($page->editable()){
+
+            //Load the template
+            $content = $this->getInjectableEditor();
+
+            //Append the editor div to the bottom
+            $event->return = str_replace("</body>", $content."</body>", $event->return);
+        }
+
+    }
+
+
+    /**
+     * Sets up a HTML element ready to be edited
+     * The element that this function is called in should be a block element, otherwise CKEditor will not
+     * render the inline editor and you will lose some functionality.
+     * @usage <div $inline->setupField("a_field_name") > <?=$page->a_field_name?> </div>
+     * @param string $field_name The name of the field that we want to edit
+     * @param Page $page_ref
+     * @return string
+     */
+    public function setupField($field_name = "",Page $page_ref = null){
+
+        $field_type = "text";
+
+        //Do we use the current page, or the page reference passed to us?
+        if(is_null($page_ref)){
+            $page = wire("page");
+        }
+        else{
+            $page = $page_ref;
+        }
+
+        //What type of field are we working with?
+        if(is_object($page->$field_name)){
+            $field_type  = get_class($page->$field_name);
+        }
+
+        //Setup the string that will be injected into the HTML element
+        $return_string = " data-field-type='{$field_type}' contenteditable='true' data-pw-inline='true' data-page-id='{$page->id}' data-field-name='{$field_name}'";
+
+        //Is the user allowed to edit this page in the first place?
+        if($this->page->editable()){
+            return $return_string;
+        }
+        else{
+            //If not, return nothing
+            return "";
+        }
+
+    }
+
+
+    /**
+     * Called after the page is rendered by setupDiv()
+     * This method provides the CSS and HTML contents that will be injected just before the last <body> tag
+     * @return string Injectable HTML and CSS string
+     */
+    protected function getInjectableEditor(){
+
+        $config = wire("config");
+        $version = wordwrap(self::$version, 1, '.', true);
+
+        $logout_url = $this->pages->get($config->adminRootPageID)->httpUrl."login/logout";
+
+        $content = <<<CONTENT
+
+        <!--
+        Injected editing bar from Inline Editor
+        © 2013 Simon Fernandes (sinmok[at]gmail.com)
+        -->
+
+        <style type="text/css">
+
+            .inline-editor-pw-module-editable{
+                border: 1px dashed {$this->editable_color};
+            }
+
+            #inline-editor-pw-module{
+                bottom: 0px;
+                height: 30px;
+                background-color: {$this->background_color};
+                color: {$this->text_color};
+                position: fixed;
+                width: 100%;
+                padding: 15px;
+                overflow: auto;
+                font-size: 13px;
+
+            }
+
+            #inline-editor-pw-module-close{
+                float: right;
+                color: {$this->link_color};
+                text-decoration: none;
+            }
+
+            #inline-editor-pw-module-close:hover{
+                color: {$this->link_color_hover};
+            }
+
+            #inline-editor-pw-module-status{
+
+            }
+
+            .inline-editor-pw-module-success{
+                color: green;
+            }
+
+            .inline-editor-pw-module-failure{
+                color: red;
+            }
+
+            #inline-editor-pw-module-url{
+                display: none;
+            }
+
+            .inline-editor-pw-module-33{
+                width: 33%;
+                float: left;
+                overflow: auto;
+                padding-top: 1px;
+                padding-bottom: 5px;
+            }
+
+            .inline-editor-pw-module-right{
+                text-align: right;
+            }
+
+            .inline-editor-pw-module-center{
+                text-align: center;
+            }
+
+        </style>
+
+        <div id="inline-editor-pw-module" style="float: left">
+
+            <div class="inline-editor-pw-module-33">
+                    Inline Editor v {$version} Logged in as: {$this->admin}
+            </div>
+
+            <div class="inline-editor-pw-module-33 inline-editor-pw-module-center">
+                <div id="inline-editor-pw-module-status">
+                    Click on a <span style="border:1px dashed{$this->editable_color}">dashed area</span> to edit.
+                    Click off the area to save.
+                    <br/>Double click <span style="border:1px dashed{$this->editable_color}">dashed images</span> to edit (Single Image field only)
+                </div>
+            </div>
+
+            <div class="inline-editor-pw-module-33 inline-editor-pw-module-right">
+                <a href="{$logout_url}" id="inline-editor-pw-module-close">
+                    Close / Logout
+                </a>
+                <span id='inline-editor-pw-module-url'>{$this->admin_url}</span>
+            </div>
+
+
+        </div>
+
+CONTENT;
+
+           return $content;
+    }
+
+
+
+}

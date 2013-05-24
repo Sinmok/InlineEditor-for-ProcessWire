@@ -1,0 +1,189 @@
+<?php
+/**
+ * Copyright Simon Fernandes
+ * @author: Simon Fernandes
+ * Date: 10/05/2013
+ * Time: 10:20
+ */
+
+class InlineEditorProcess extends Process {
+
+    /**
+     * Return information about this module (required)
+     */
+
+    public static $module_name = "Inline_Editor_for_PW";
+
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'Inline Editor Process',
+            'summary' => 'Processor for the inline editor',
+            'version' => 004,
+            'author' => 'Simon Fernandes',
+            'permission' => 'page-edit',
+        );
+    }
+
+    /**
+     * Get the input, update and save the page.
+     * Each AJAX call to this method will update a single field
+     */
+    public function ___execute() {
+
+
+        //Is AJAX request?
+        if($this->config->ajax != true){
+            throw new WireException("Request must be via AJAX");
+        }
+
+        $page_to_update = $this->pages->get($this->input->post("page_id"));
+
+
+        //Does this page exist?
+        if(!$page_to_update->id){
+            $result = $this->formatResult("failed","The requested page does not exist!");
+        }
+        //It does exist.
+        else{
+
+            //Do they have permission to save the page?
+            if($page_to_update->editable()){
+
+                //which method handles the request?
+                //Check the type of field this is. If it's just text, great.
+                //If not, we need to handle the file upload
+                switch($this->input->post("field_type")){
+                    case "text":
+                        $result = $this->handleText($page_to_update);
+                        break;
+                    case "Pageimage":
+                        $result = $this->handleImage($page_to_update);
+                        break;
+                    default:
+                        $result = $this->handleText($page_to_update);
+                        break;
+                }
+
+            }
+            //They do not have permission.
+            else{
+                $result = $this->formatResult("failed","Permission denied");
+            }
+        }
+
+        return $result;
+
+    }
+
+    private function formatResult($status,$exception){
+
+        $result = array(
+            "status" => $status,
+            "exception" => $exception
+        );
+
+        return json_encode($result);
+
+    }
+
+    /**
+     * @param Page $page The page to be edited
+     * @return string JSON encoded string of the result
+     */
+    protected function handleText(Page $page){
+
+        //Get the field name
+        $field_name = $this->input->post("field_name");
+        //Get the data for this field
+        $page->$field_name = $this->input->post("data");
+        //Save the page
+        $page->save();
+
+        //Return the result
+        return $this->formatResult("ok","Field '{$field_name}' on page '{$page->name}' successfully updated");
+
+    }
+
+    /**
+     * TODO - Validate the images
+     * Handle an upload of images
+     * @param Page $page
+     */
+    protected function handleImage(Page &$page){
+        //Get the field name
+        $field_name = $this->input->post("field_name");
+
+        $current_name = $page->$field_name->basename;
+
+        $upload = new WireUpload("file");
+        $upload->setMaxFiles(1);
+        $upload->setOverwrite(true);
+        $upload->setDestinationPath("{$this->config->paths->files}/{$page->id}/");
+        $upload->setOverwriteFilename($current_name);
+        $upload->setValidExtensions(array("jpg","gif","png"));
+
+        $files = $upload->execute();
+
+        if(empty($files)){
+            //Something went wrong..
+            return $this->formatResult("failed",implode(" | ",$upload->getErrors()));
+        }
+
+
+        /**
+         * todo How on earth do you just replace an image instead of adding?
+         */
+        $page->$field_name->deleteAll();
+
+        $name = $files[0];
+
+        foreach($files as $file){
+            $page->$field_name->add($file);
+        }
+
+        $page->save();
+
+
+        return json_encode(array(
+            "status" => "ok",
+            "location" => $page->$field_name->url."".$name,
+            "exception" => "Image succesfully updated"
+        ));
+        //return json_encode($_FILES);
+    }
+
+
+    /**
+     * Install a new admin page for this process.
+     */
+    public function ___install() {
+
+        $page = new Page();
+        $page->template = 'admin';
+        $page->name = self::$module_name;
+
+        $page->parent = $this->pages->get($this->config->adminRootPageID)->child('name=page');
+        $page->process = $this;
+
+        $page->title = self::$module_name;
+
+        // save the page
+        $page->save();
+
+        // tell the user we created this page
+        $this->message("Inline Editor Admin page has been created");
+
+    }
+
+
+    /**
+     * Remove the admin page that was created during install.
+     */
+    public function ___uninstall() {
+
+        $to_delete = $this->pages->get("template=admin, name=". self::$module_name);
+        $to_delete->delete();
+
+    }
+
+}
