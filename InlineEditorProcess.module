@@ -18,7 +18,7 @@ class InlineEditorProcess extends Process {
         return array(
             'title' => 'Inline Editor Process',
             'summary' => 'Processor for the inline editor',
-            'version' => 003,
+            'version' => 004,
             'author' => 'Simon Fernandes',
             'permission' => 'page-edit',
         );
@@ -56,7 +56,7 @@ class InlineEditorProcess extends Process {
                     case "text":
                         $result = $this->handleText($page_to_update);
                         break;
-                    case "image":
+                    case "Pageimage":
                         $result = $this->handleImage($page_to_update);
                         break;
                     default:
@@ -105,12 +105,51 @@ class InlineEditorProcess extends Process {
     }
 
     /**
-     * TODO - Handle image uploads - but how?
+     * TODO - Validate the images
      * Handle an upload of images
      * @param Page $page
      */
     protected function handleImage(Page &$page){
+        //Get the field name
+        $field_name = $this->input->post("field_name");
 
+        $current_name = $page->$field_name->basename;
+
+        $upload = new WireUpload("file");
+        $upload->setMaxFiles(1);
+        $upload->setOverwrite(true);
+        $upload->setDestinationPath("{$this->config->paths->files}/{$page->id}/");
+        $upload->setOverwriteFilename($current_name);
+        $upload->setValidExtensions(array("jpg","gif","png"));
+
+        $files = $upload->execute();
+
+        if(empty($files)){
+            //Something went wrong..
+            return $this->formatResult("failed",implode(" | ",$upload->getErrors()));
+        }
+
+
+        /**
+         * todo How on earth do you just replace an image instead of adding?
+         */
+        $page->$field_name->deleteAll();
+
+        $name = $files[0];
+
+        foreach($files as $file){
+            $page->$field_name->add($file);
+        }
+
+        $page->save();
+
+
+        return json_encode(array(
+            "status" => "ok",
+            "location" => $page->$field_name->url."".$name,
+            "exception" => "Image succesfully updated"
+        ));
+        //return json_encode($_FILES);
     }
 
 
