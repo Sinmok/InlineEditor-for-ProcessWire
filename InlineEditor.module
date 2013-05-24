@@ -185,9 +185,9 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
                 $output .= "\n \t <script src='//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js'></script>";
             }
 
-            $output .= "\n \t <script src='". wire('config')->urls->siteModules .$folder_name."/js/dropzone/dropzone.min.js'/></script>";
-            $output .= "\n \t <script src='". wire('config')->urls->siteModules .$folder_name."/js/ckeditor/ckeditor.js'></script>";
-            $output .= "\n \t <script src='". wire('config')->urls->siteModules .$folder_name."/js/inlineeditor.js'></script>";
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules ."InlineEditor/js/dropzone/dropzone.min.js'/></script>";
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules ."InlineEditor/js/ckeditor/ckeditor.js'></script>";
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules ."InlineEditor/js/inlineeditor.js'></script>";
 
 
         }
@@ -376,10 +376,5 @@ CONTENT;
            return $content;
     }
 
-
-
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 2f435a825944339f0bcf4a4ee73013eea5eee7b8
+

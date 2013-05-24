@@ -136,8 +136,5 @@ $(document).ready(function(){
     }
 
 
-<<<<<<< HEAD
+
 });
-=======
-});
->>>>>>> 2f435a825944339f0bcf4a4ee73013eea5eee7b8
