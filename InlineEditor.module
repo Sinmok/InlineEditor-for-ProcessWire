@@ -20,6 +20,8 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
     public $admin;
     public $editable_color;
 
+    protected static $version = "004";
+
 
 
     protected static $config = array(
@@ -48,7 +50,7 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
         return array(
             'title' => 'An inline editor for front-end content management',
             'summary' => 'This plugin allows you to edit content inline in the front end',
-            'version' => 003,
+            'version' => self::$version,
             'author' => 'Simon Fernandes (sinmok@gmail.com)',
             'permission' => 'page-edit',
             'autoload' => true,
@@ -169,6 +171,10 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
 
         $page = wire("page");
 
+        //Get name of this folder
+        $folder = explode("/",__DIR__);
+        $folder_name = array_pop($folder);
+
         $output = "";
 
         //Does the user have permission?
@@ -179,8 +185,10 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
                 $output .= "\n \t <script src='//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js'></script>";
             }
 
-            $output .= "\n \t <script src='". wire('config')->urls->siteModules ."InlineEditor/js/ckeditor/ckeditor.js'></script>";
-            $output .= "\n \t <script src='". wire('config')->urls->siteModules ."InlineEditor/js/inlineeditor.js?=1'></script>";
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules .$folder_name."/js/dropzone/dropzone.min.js'/></script>";
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules .$folder_name."/js/ckeditor/ckeditor.js'></script>";
+            $output .= "\n \t <script src='". wire('config')->urls->siteModules .$folder_name."/js/inlineeditor.js'></script>";
+
 
         }
 
@@ -227,6 +235,8 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
      */
     public function setupField($field_name = "",Page $page_ref = null){
 
+        $field_type = "text";
+
         //Do we use the current page, or the page reference passed to us?
         if(is_null($page_ref)){
             $page = wire("page");
@@ -235,8 +245,13 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
             $page = $page_ref;
         }
 
+        //What type of field are we working with?
+        if(is_object($page->$field_name)){
+            $field_type  = get_class($page->$field_name);
+        }
+
         //Setup the string that will be injected into the HTML element
-        $return_string = "contenteditable='true' data-pw-inline='true' data-page-id='{$page->id}' data-field-name='{$field_name}'";
+        $return_string = " data-field-type='{$field_type}' contenteditable='true' data-pw-inline='true' data-page-id='{$page->id}' data-field-name='{$field_name}'";
 
         //Is the user allowed to edit this page in the first place?
         if($this->page->editable()){
@@ -249,6 +264,7 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
 
     }
 
+
     /**
      * Called after the page is rendered by setupDiv()
      * This method provides the CSS and HTML contents that will be injected just before the last <body> tag
@@ -257,6 +273,7 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
     protected function getInjectableEditor(){
 
         $config = wire("config");
+        $version = wordwrap(self::$version, 1, '.', true);
 
         $logout_url = $this->pages->get($config->adminRootPageID)->httpUrl."login/logout";
 
@@ -275,13 +292,14 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
 
             #inline-editor-pw-module{
                 bottom: 0px;
-                height: 25px;
+                height: 30px;
                 background-color: {$this->background_color};
                 color: {$this->text_color};
                 position: fixed;
                 width: 100%;
                 padding: 15px;
                 overflow: auto;
+                font-size: 13px;
 
             }
 
@@ -315,7 +333,7 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
                 width: 33%;
                 float: left;
                 overflow: auto;
-                padding-top: 5px;
+                padding-top: 1px;
                 padding-bottom: 5px;
             }
 
@@ -332,12 +350,14 @@ class InlineEditor extends WireData implements Module, ConfigurableModule {
         <div id="inline-editor-pw-module" style="float: left">
 
             <div class="inline-editor-pw-module-33">
-                    Inline Editor v 0.0.3 Logged in as: {$this->admin}
+                    Inline Editor v {$version} Logged in as: {$this->admin}
             </div>
 
             <div class="inline-editor-pw-module-33 inline-editor-pw-module-center">
                 <div id="inline-editor-pw-module-status">
-                    &nbsp; Click on a <span style="border:1px dashed{$this->editable_color}">dashed area</span> to edit. Click off the area to save.
+                    Click on a <span style="border:1px dashed{$this->editable_color}">dashed area</span> to edit.
+                    Click off the area to save.
+                    <br/>Double click <span style="border:1px dashed{$this->editable_color}">dashed images</span> to edit (Single Image field only)
                 </div>
             </div>
 
