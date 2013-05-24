@@ -14,6 +14,11 @@ Status
 
 **Early alpha - Do not use in production sites! Use for testing only!**
 
+New in 0.0.4
+------------
+1. Experiemental image uploader using dropzone.js. This is currently only tested for use with singular image fields
+2. You no longer have to name the module folder "InlineEditor". This should make installation using the module manager a walk in the park.
+
 
 Introduction
 ------------
@@ -44,7 +49,7 @@ Installation
 1.  Grab a copy of the Inline Editor files.
 
 2.  In your ProcessWire installation, navigate to ```site/modules``` and place the
-    contents of the module inside. Rename the folder to ```InlineEditor``` so that the site structure looks like this
+    contents of the module inside. If you wish, rename the folder to ```InlineEditor``` so that the site structure looks like this
     ```
     root
         site
@@ -57,7 +62,7 @@ Installation
                     InlineEditorProcess.module
 ```
 
-3. Go back and make absolutely sure you have renamed the module folder to InlineEditor as shown above!
+3.  ~~Go back and make absolutely sure you have renamed the module folder to InlineEditor as shown above!~~ No longer required for 0.0.4 onwards.
 
 4.  Open the ProcessWire admin panel. Select "Modules" and then select Check for
     new Modules.
